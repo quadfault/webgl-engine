@@ -5,9 +5,10 @@
 
 import { Builder } from './builder.js'
 import { Context } from './context.js'
-import { DEFAULT_VS } from './default-vs.js'
-import { DEFAULT_FS } from './default-fs.js'
+import { GOURAUD_VS } from './gouraud-vs.js'
+import { GOURAUD_FS } from './gouraud-fs.js'
 import { EngineError } from './error.js'
+import { vec4 } from './math.js'
 import { NodeBuilder } from './node.js'
 
 /* A collection of nodes. */
@@ -21,13 +22,39 @@ export class Scene {
     /* The collection of nodes. */
     #nodes
 
+    /* The color of the ambient light in the scene. */
+    #ambientColor = vec4.make(0, 0, 0, 1)
+
     /* Construct a new scene with the given optional name and list of nodes. */
     constructor(ctx, name, nodes) {
         this.#ctx = ctx
         this.#name = name
         this.#nodes = nodes
 
-        this.loadShaders(DEFAULT_VS, DEFAULT_FS)
+        this.loadShaders(GOURAUD_VS, GOURAUD_FS)
+    }
+
+    /* Set or get the ambient light color of this scene. */
+    ambientColor(r, g, b, a) {
+        if (r) {
+            this.#ambientColor = vec4.make(r, g, b, a)
+            return this
+        }
+
+        return this.#ambientColor
+    }
+
+    select(name) {
+        if (this.#name === name)
+            return this
+
+        for (let node of this.#nodes) {
+            const result = node.select(name)
+            if (result)
+                return result
+        }
+
+        return null
     }
 
     update(delta) {
@@ -38,15 +65,22 @@ export class Scene {
     /* Render the scene. */
     render() {
         const gl = this.#ctx.gl
+        const attrs = this.#ctx.attrs
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.uniform4fv(attrs.u_AmbientColor, this.#ambientColor.asArray())
 
+        /* Render each node. Each node will return a list of (prepared) meshes that are ready to render. We need to
+         * render the meshes after all other objects so that things like cameras and lights are fully prepared and
+         * can be used in the shaders.
+         */
+        let meshes = []
         for (let node of this.#nodes)
-            node.prepare()
+            meshes.push(...node.prepare())
 
-        for (let node of this.#nodes)
-            node.render()
+        for (let mesh of meshes)
+            mesh.render()
     }
 
     /* PRIVATE */
@@ -74,8 +108,16 @@ export class Scene {
         gl.useProgram(program)
 
         this.#ctx.addAttr('a_Position', gl.getAttribLocation(program, 'a_Position'))
+        this.#ctx.addAttr('a_Normal', gl.getAttribLocation(program, 'a_Normal'))
+        this.#ctx.addAttr('u_ModelTransform', gl.getUniformLocation(program, 'u_ModelTransform'))
+        this.#ctx.addAttr('u_VpTransform', gl.getUniformLocation(program, 'u_VpTransform'))
+        this.#ctx.addAttr('u_NormalTransform', gl.getUniformLocation(program, 'u_NormalTransform'))
         this.#ctx.addAttr('u_Color', gl.getUniformLocation(program, 'u_Color'))
-        this.#ctx.addAttr('u_MVT', gl.getUniformLocation(program, 'u_MVT'))
+        this.#ctx.addAttr('u_AmbientColor', gl.getUniformLocation(program, 'u_AmbientColor'))
+        this.#ctx.addAttr('u_LightType', gl.getUniformLocation(program, 'u_LightType'))
+        this.#ctx.addAttr('u_LightPosition', gl.getUniformLocation(program, 'u_LightPosition'))
+        this.#ctx.addAttr('u_LightDirection', gl.getUniformLocation(program, 'u_LightDirection'))
+        this.#ctx.addAttr('u_LightColor', gl.getUniformLocation(program, 'u_LightColor'))
     }
 
     compileShader(type, src) {

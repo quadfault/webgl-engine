@@ -1,4 +1,4 @@
-/* cube.js - Render a cube created in Blender.
+/* torus.js - Render a torus created in Blender.
  * Written by quadfault
  * 4/13/23
  */
@@ -10,10 +10,10 @@ import { Renderer, mat4 } from './engine.js'
 const canvas = document.querySelector('canvas')
 const renderer = new Renderer(canvas)
 
-await renderer.loadGltfAssetAsync('/cube.gltf')
+await renderer.loadGltfAssetAsync('/torus.gltf')
 renderer.select('Scene')
     .ambientColor(0.1, 0.1, 0.1, 1)
-renderer.select('cube-node')
+renderer.select('torus-node')
     .on('update', spinBy(20))
 
 renderer.animate()

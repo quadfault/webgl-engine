@@ -45,6 +45,10 @@ export class Renderer {
         this.#scene = scenes[defaultSceneIndex]
     }
 
+    select(name) {
+        return this.#scene.select(name)
+    }
+
     /* Update the scene. */
     update(delta) {
         this.#scene.update(delta)

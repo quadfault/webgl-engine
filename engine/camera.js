@@ -25,16 +25,23 @@ export class Camera {
         this.#projection = projection
     }
 
-    /* Prepare the camera for rendering. This means setting the view transform for the scene from the inherited
-     * transforms of the camera's ancestor nodes.
-     */
-    prepare(transform) {
-        this.#ctx.viewTransform = this.#projection.times(transform.inverseRigid())
+    select(name) {
+        if (this.#name == name)
+            return this
+
+        return null
     }
 
     update() {}
 
-    render() {}
+    /* Prepare the camera for rendering. This means setting the view-projection transform for the scene from the
+     * inherited transforms of the camera's ancestor nodes.
+     */
+    prepare(transform) {
+        this.#ctx.vpTransform = this.#projection.times(transform.inverseRigid())
+        
+        return []
+    }
 }
 
 export class CameraBuilder extends Builder {

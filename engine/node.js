@@ -37,26 +37,42 @@ export class Node {
     /* Construct a new node with the given name, the given transform, which is applied to the given children
      * when rendering.
      */
-    constructor(ctx, name, transform, children, ons) {
+    constructor(ctx, name, transform, children) {
         this.#ctx = ctx
         this.#name = name
         this.#transform = transform
         this.#children = children
+    }
 
-        for (let on of ons) {
-            if (on.event === 'update')
-                this.#updateHandler = on.handler
-            else
-                this.#ctx.canvas.addEventListener(on.event, (ev) => on.handler(this, ev))
+    select(name) {
+        if (this.#name === name)
+            return this
+
+        for (let child of this.#children) {
+            const result = child.select(name)
+            if (result)
+                return result
         }
+
+        return null
+    }
+
+    on(event, handler) {
+        if (event === 'update')
+            this.#updateHandler = handler
+        else
+            this.#ctx.canvas.addEventListener(event, (ev) => handler(this, ev))
     }
 
     /* Prepare this node and its children for rendering. */
     prepare(transform) {
         transform = transform ? transform.times(this.#transform) : this.#transform
 
+        let meshes = []
         for (let child of this.#children)
-            child.prepare(transform)
+            meshes.push(...child.prepare(transform))
+
+        return meshes
     }
 
     update(delta) {
@@ -64,11 +80,6 @@ export class Node {
 
         for (let child of this.#children)
             child.update(delta)
-    }
-
-    render() {
-        for (let child of this.#children)
-            child.render()
     }
 }
 

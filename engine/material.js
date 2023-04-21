@@ -17,13 +17,23 @@ export class Material {
     /* The flat RGBA color this material represents. */
     #color
 
-    get color() {
-        return this.#color
-    }
-
     constructor(ctx, name, color) {
         this.#ctx = ctx
         this.#name = name
         this.#color = color
+    }
+
+    select(name) {
+        if (this.#name === name)
+            return this
+
+        return null
+    }
+
+    render() {
+        const gl = this.#ctx.gl
+        const attrs = this.#ctx.attrs
+
+        gl.uniform4fv(attrs.u_Color, this.#color)
     }
 }

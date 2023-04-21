@@ -6,8 +6,9 @@
 import { Attribute } from './attribute.js'
 import { Buffer } from './buffer.js'
 import { Camera } from './camera.js'
+import { DirectionalLight, PointLight } from './light.js'
 import { Material } from './material.js'
-import { mat4 } from './math.js'
+import { mat4, vec4 } from './math.js'
 import { Mesh } from './mesh.js'
 import { Node } from './node.js'
 import { Primitive } from './primitive.js'
@@ -55,6 +56,21 @@ export async function loadGltfAssetAsync(url) {
 
 /* Load */
 export function scenesFromAsset(ctx, asset) {
+    /* Convert each glTF light into the appropriate kind of Light. */
+    const lights = []
+    if (asset.extensionsUsed?.includes('KHR_lights_punctual')) {
+        for (let lightSpec of asset.extensions.KHR_lights_punctual.lights) {
+            const color = vec4.make(...lightSpec.color, 1)
+
+            if (lightSpec.type === 'directional')
+                lights.push(new DirectionalLight(ctx, lightSpec.name, color))
+            else if (lightSpec.type === 'point')
+                lights.push(new PointLight(ctx, lightSpec.name, color))
+
+            /* TODO: handle other light types */
+        }
+    }
+
     /* Convert each glTF buffer view into a Buffer. */
     const buffers = []
     for (let bufferSpec of asset.bufferViews) {
@@ -105,7 +121,7 @@ export function scenesFromAsset(ctx, asset) {
     for (let sceneSpec of asset.scenes) {
         const sceneNodes = []
         for (let nodeIndex of sceneSpec.nodes)
-            sceneNodes.push(nodeFromSpec(ctx, asset, nodeIndex, cameras, meshes))
+            sceneNodes.push(nodeFromSpec(ctx, asset, nodeIndex, cameras, meshes, lights))
 
         scenes.push(new Scene(ctx, sceneSpec.name, sceneNodes))
     }
@@ -118,22 +134,10 @@ function primitiveFromSpec(ctx, asset, primitiveSpec, buffers, materials) {
 
     const mode = primitiveSpec.hasOwnProperty('mode') ? primitiveSpec.mode : gl.TRIANGLES
     const material = materials[primitiveSpec.material]
-    
-    const positionAccessor = asset.accessors[primitiveSpec.attributes.POSITION]
-    const positionBuffer = buffers[positionAccessor.bufferView]
-    const positionSize = componentsPerType[positionAccessor.type]
-    const positionType = positionAccessor.componentType
-    const positionStride = 0
-    const positionOffset = positionAccessor.byteOffset || 0
-    const positionAttr = new Attribute(
-        ctx,
-        positionBuffer,
-        'a_Position',
-        positionSize,
-        positionType,
-        positionStride,
-        positionOffset)
 
+    const positionAttr = makeAttribute(ctx, 'a_Position', asset.accessors[primitiveSpec.attributes.POSITION], buffers)
+    const normalAttr = makeAttribute(ctx, 'a_Normal', asset.accessors[primitiveSpec.attributes.NORMAL], buffers)
+    
     let indexBuffer, indexCount, indexType, indexOffset
     if (primitiveSpec.hasOwnProperty('indices')) {
         const indexAccessor = asset.accessors[primitiveSpec.indices]
@@ -143,10 +147,29 @@ function primitiveFromSpec(ctx, asset, primitiveSpec, buffers, materials) {
         indexOffset = indexAccessor.byteOffset || 0
     }
 
-    return new Primitive(ctx, mode, positionAttr, material, indexBuffer, indexCount, indexType, indexOffset)
+    return new Primitive(
+        ctx,
+        mode,
+        positionAttr,
+        normalAttr,
+        material,
+        indexBuffer,
+        indexCount,
+        indexType,
+        indexOffset)
 }
 
-function nodeFromSpec(ctx, asset, nodeIndex, cameras, meshes) {
+function makeAttribute(ctx, name, accessorSpec, buffers) {
+    const buffer = buffers[accessorSpec.bufferView]
+    const size = componentsPerType[accessorSpec.type]
+    const type = accessorSpec.componentType
+    const stride = 0
+    const offset = accessorSpec.byteOffset || 0
+
+    return new Attribute(ctx, buffer, name, size, type, stride, offset)
+}
+
+function nodeFromSpec(ctx, asset, nodeIndex, cameras, meshes, lights) {
     const nodeSpec = asset.nodes[nodeIndex]
 
     const transform = nodeSpec.matrix ||
@@ -160,6 +183,10 @@ function nodeFromSpec(ctx, asset, nodeIndex, cameras, meshes) {
         children.push(cameras[nodeSpec.camera])
     if (nodeSpec.hasOwnProperty('mesh'))
         children.push(meshes[nodeSpec.mesh])
+    if (nodeSpec.hasOwnProperty('extensions')) {
+        if (nodeSpec.extensions.hasOwnProperty('KHR_lights_punctual'))
+            children.push(lights[nodeSpec.extensions.KHR_lights_punctual.light])
+    }
     if (nodeSpec.hasOwnProperty('children'))
         for (let childIndex of nodeSpec.children)
             children.push(nodeFromSpec(ctx, asset, childIndex, cameras, meshes))

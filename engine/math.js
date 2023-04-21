@@ -3,7 +3,53 @@
  * 1/25/23
  */
 
-/* A 4x4 matrix. */
+/* A 4-dimensional column vector that can represent 3-dimensional homogenous vectors and points, and RGBA colors. */
+export class vec4 {
+    /* The components of this vector as a 4-element array [x, y, z, w]. */
+    v
+
+    /* Construct a new vec4 from the 4-element array `components`. */
+    constructor(components) {
+        this.v = components
+    }
+
+    /* Construct a new vec4 with components [x, y, z, w]. */
+    static make(x, y, z, w) {
+        return new vec4([x, y, z, w])
+    }
+
+    /* Return a new zero vector. */
+    static zero() {
+        return vec4.make(0, 0, 0, 0)
+    }
+
+    /* Scalar multiplication. Return a new vector with each component of this vector multiplied by `scalar`. */
+    times(scalar) {
+        return vec4.make(scalar * this.v[0], scalar * this.v[1], scalar * this.v[2], scalar * this.v[3])
+    }
+
+    /* Return a new vector that is the negation of this vector (scalar multiply by -1.) */
+    negate() {
+        return this.times(-1)
+    }
+
+    /* Return the component in row `r` (0 <= `r` <= 3). */
+    at(r) {
+        return this.v[r]
+    }
+
+    /* Set the component in row `r` to the value `a` (0 <= `r` <= 3). */
+    setAt(r, a) {
+        this.v[r] = a
+    }
+
+    /* Return the components of this vector as a 4-element array [x, y, z, w]. */
+    asArray() {
+        return this.v
+    }
+}
+
+/* A 4x4 homogenous matrix. */
 export class mat4 {
     /* Construct a new mat4 with 'entries' specified in column-major order. */
     constructor(entries) {
@@ -220,8 +266,29 @@ export class mat4 {
         this.m[i + j * 4] = e
     }
 
-    /* Multiply 'this' by 'that', so that as a transform, 'this' is applied after 'that'. */
+    /* Multiply `this` by `that`. The parameter `that` can be a vec4 or a mat4. */
     times(that) {
+        if (that instanceof vec4)
+            return this.#times_vec4(that)
+        else if (that instanceof mat4)
+            return this.#times_mat4(that)
+    }
+
+    #times_vec4(that) {
+        let product = vec4.zero()
+
+        for (let i = 0; i < 4; ++i) {
+            let sum = 0;
+            for (let j = 0; j < 4; ++j)
+                sum += this.at(i, j) * that.at(j)
+
+            product.setAt(i, sum)
+        }
+
+        return product
+    }
+
+    #times_mat4(that) {
         let product = mat4.zero()
 
         for (let i = 0; i < 4; ++i) {
@@ -247,7 +314,10 @@ export class mat4 {
         ])
     }
 
-    /* Return the inverse matrix of a rigid-body transform. */
+    /* Return the inverse of this matrix. This matrix must be a rigid-body (Euclidean) transform. Note that
+     * a rigid-body transform can only include rotations, reflections, and translations, and the translations must
+     * all come last in application order.
+     */
     inverseRigid() {
         const invRotation = mat4.from_rows([
             this.at(0, 0), this.at(1, 0), this.at(2, 0), 0,
@@ -316,7 +386,7 @@ export class mat4 {
     /* Return the entries of the matrix as an array in column-major order. You can pass the return value
      * directly to WebGL functions like gl.uniformMatrix*().
      */
-    as_array() {
+    asArray() {
         return this.m
     }
 }

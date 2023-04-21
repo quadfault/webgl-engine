@@ -7,12 +7,12 @@ export const DEFAULT_VS = `
 attribute vec4 a_Position;
 
 uniform vec4 u_Color;
-uniform mat4 u_MVT;
+uniform mat4 u_MvpTransform;
 
 varying vec4 v_Color;
 
 void main() {
-    gl_Position = u_MVT * a_Position;
+    gl_Position = u_MvpTransform * a_Position;
     v_Color = u_Color;
 }
 `

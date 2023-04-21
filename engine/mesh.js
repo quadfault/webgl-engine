@@ -22,9 +22,27 @@ export class Mesh {
         this.#primitives = primitives
     }
 
+    select(name) {
+        if (this.#name === name)
+            return this
+
+        /* Primitives aren't actually selectable, but their materials are. */
+        for (let primitive of this.#primitives) {
+            const result = primitive.select(name)
+            if (result)
+                return result
+        }
+
+        return null
+    }
+
+    update(delta) {}
+
     prepare(transform) {
         for (let primitive of this.#primitives)
             primitive.prepare(transform)
+
+        return [this]
     }
 
     render() {

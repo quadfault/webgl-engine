@@ -14,6 +14,9 @@ export class Primitive {
     /* The vertex position attribute. */
     #positionAttr
 
+    /* The vertex normal attribute. */
+    #normalAttr
+
     /* The material defining the reflectance model for this primitive. */
     #material
 
@@ -32,15 +35,20 @@ export class Primitive {
     /* The model transform of this primitive, inherited from its ancestor nodes. */
     #modelTransform = null
 
-    constructor(ctx, mode, positionAttr, material, indexBuffer, indexCount, indexType, indexOffset) {
+    constructor(ctx, mode, positionAttr, normalAttr, material, indexBuffer, indexCount, indexType, indexOffset) {
         this.#ctx = ctx
         this.#mode = mode
         this.#positionAttr = positionAttr
+        this.#normalAttr = normalAttr
         this.#material = material
         this.#indexBuffer = indexBuffer
         this.#indexCount = indexCount
         this.#indexType = indexType
         this.#indexOffset = indexOffset
+    }
+
+    select(name) {
+        return this.#material.select(name)
     }
 
     prepare(transform) {
@@ -51,13 +59,16 @@ export class Primitive {
     render() {
         const gl = this.#ctx.gl
         const attrs = this.#ctx.attrs
-        const viewTransform = this.#ctx.viewTransform
+        const vpTransform = this.#ctx.vpTransform
 
-        const mvt = viewTransform.times(this.#modelTransform)
+        this.#material.render()
 
         this.#positionAttr.attach()
-        gl.uniform4fv(attrs.u_Color, this.#material.color)
-        gl.uniformMatrix4fv(attrs.u_MVT, false, mvt.as_array())
+        this.#normalAttr.attach()
+        gl.uniformMatrix4fv(attrs.u_ModelTransform, false, this.#modelTransform.asArray())
+        gl.uniformMatrix4fv(attrs.u_VpTransform, false, vpTransform.asArray())
+        /* FIXME: This should actually be the inverse transpose of the model transform. */
+        gl.uniformMatrix4fv(attrs.u_NormalTransform, false, this.#modelTransform.asArray())
 
         if (this.#indexBuffer) {
             this.#indexBuffer.bind()
