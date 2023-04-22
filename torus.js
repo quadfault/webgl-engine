@@ -23,7 +23,7 @@ renderer.animate()
 /* Spin a node by 'angle' degrees per second. */
 function spinBy(angle) {
     return (node, delta) => {
-        node.transform = mat4.rotate_z(angle / 1000 * delta).times(node.transform)
+        node.transform(mat4.rotate_z(angle / 1000 * delta).times(node.transform()))
     }
 }
 

@@ -36,7 +36,7 @@ void main() {
         L = vec4(0.0);
     }
 
-    vec4 N = u_NormalTransform * a_Normal;
+    vec4 N = normalize(u_NormalTransform * a_Normal);
     float N_dot_L = max(dot(N, L), 0.0);
 
     /* Ambient reflection. */

@@ -20,14 +20,6 @@ export class Node {
     /* The transform for this node, which is applied to all children. */
     #transform
 
-    get transform() {
-        return this.#transform
-    }
-
-    set transform(t) {
-        this.#transform = t
-    }
-
     /* The children of this node, which can be meshes and other nodes. */
     #children = []
 
@@ -62,6 +54,16 @@ export class Node {
             this.#updateHandler = handler
         else
             this.#ctx.canvas.addEventListener(event, (ev) => handler(this, ev))
+    }
+
+    /* Get or set the transform of this node. */
+    transform(t) {
+        if (t) {
+            this.#transform = t
+            return this
+        }
+
+        return this.#transform
     }
 
     /* Prepare this node and its children for rendering. */

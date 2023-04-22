@@ -314,6 +314,30 @@ export class mat4 {
         ])
     }
 
+    /* Return the transpose of the 3x3 adjoint of this matrix, zeroing any translation components. This is used
+     * to correctly transform normal vectors from a mesh's model transform.
+     */
+    adjointTranspose() {
+        const sd00 = this.at(1, 1) * this.at(2, 2) - this.at(1, 2) * this.at(2, 1)
+        const sd01 = this.at(1, 0) * this.at(2, 2) - this.at(1, 2) * this.at(2, 0)
+        const sd02 = this.at(1, 0) * this.at(2, 1) - this.at(1, 1) * this.at(2, 0)
+        const sd10 = this.at(0, 1) * this.at(2, 2) - this.at(0, 2) * this.at(2, 1)
+        const sd11 = this.at(0, 0) * this.at(2, 2) - this.at(0, 2) * this.at(2, 0)
+        const sd12 = this.at(0, 0) * this.at(2, 1) - this.at(0, 1) * this.at(2, 0)
+        const sd20 = this.at(0, 1) * this.at(1, 2) - this.at(0, 2) * this.at(1, 1)
+        const sd21 = this.at(0, 0) * this.at(1, 2) - this.at(0, 2) * this.at(1, 0)
+        const sd22 = this.at(0, 0) * this.at(1, 1) - this.at(0, 1) * this.at(1, 0)
+
+        const adjoint = mat4.from_rows([
+             sd00, -sd10,  sd20, 0,
+            -sd01,  sd11, -sd21, 0,
+             sd02, -sd12,  sd22, 0,
+             0,     0,     0,    1,
+        ])
+
+        return adjoint.transpose()
+    }
+
     /* Return the inverse of this matrix. This matrix must be a rigid-body (Euclidean) transform. Note that
      * a rigid-body transform can only include rotations, reflections, and translations, and the translations must
      * all come last in application order.

@@ -67,8 +67,7 @@ export class Primitive {
         this.#normalAttr.attach()
         gl.uniformMatrix4fv(attrs.u_ModelTransform, false, this.#modelTransform.asArray())
         gl.uniformMatrix4fv(attrs.u_VpTransform, false, vpTransform.asArray())
-        /* FIXME: This should actually be the inverse transpose of the model transform. */
-        gl.uniformMatrix4fv(attrs.u_NormalTransform, false, this.#modelTransform.asArray())
+        gl.uniformMatrix4fv(attrs.u_NormalTransform, false, this.#modelTransform.adjointTranspose().asArray())
 
         if (this.#indexBuffer) {
             this.#indexBuffer.bind()
