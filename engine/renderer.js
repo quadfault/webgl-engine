@@ -6,6 +6,8 @@
 import { Context } from './context.js'
 import { EngineError } from './error.js'
 import { loadGltfAssetAsync, scenesFromAsset } from './gltf.js'
+import { GOURAUD_VS } from './gouraud-vs.js'
+import { GOURAUD_FS } from './gouraud-fs.js'
 
 /* A WebGL renderer attached to a canvas. */
 export class Renderer {
@@ -27,7 +29,7 @@ export class Renderer {
         this.#ctx = new Context(gl)
         this.#canvas = canvas
 
-        gl.enable(gl.DEPTH_TEST)
+        this.#initGl()
     }
 
     /* Load the scenes described in the glTF 2.0 asset located at `url`. The URL should not be relative (except
@@ -77,5 +79,74 @@ export class Renderer {
         }
 
         window.requestAnimationFrame(step)
+    }
+
+    /* Initialize all per-renderer GL state, including loading the shaders. */
+    #initGl() {
+        const gl = this.#ctx.gl
+
+        gl.enable(gl.DEPTH_TEST)
+
+        this.#loadShaders(GOURAUD_VS, GOURAUD_FS)
+    }
+
+    /* Load the vertex and fragment shaders from the source strings `vsSrc` and `fsSrc`, respectively. */
+    #loadShaders(vsSrc, fsSrc) {
+        const gl = this.#ctx.gl
+
+        const vs = this.#compileShader(gl.VERTEX_SHADER, vsSrc)
+        const fs = this.#compileShader(gl.FRAGMENT_SHADER, fsSrc)
+
+        const program = gl.createProgram()
+        if (!program)
+            throw new EngineError('failed to create shader program object')
+
+        gl.attachShader(program, vs)
+        gl.attachShader(program, fs)
+        gl.linkProgram(program)
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const log = gl.getProgramInfoLog(program)
+            gl.deleteProgram(program)
+            throw new EngineError(`shader program linking failed: ${log}`)
+        }
+
+        gl.useProgram(program)
+
+        this.#ctx.addAttr('a_Position', gl.getAttribLocation(program, 'a_Position'))
+        this.#ctx.addAttr('a_Normal', gl.getAttribLocation(program, 'a_Normal'))
+        this.#ctx.addAttr('u_ModelTransform', gl.getUniformLocation(program, 'u_ModelTransform'))
+        this.#ctx.addAttr('u_VpTransform', gl.getUniformLocation(program, 'u_VpTransform'))
+        this.#ctx.addAttr('u_NormalTransform', gl.getUniformLocation(program, 'u_NormalTransform'))
+        this.#ctx.addAttr('u_Color', gl.getUniformLocation(program, 'u_Color'))
+        this.#ctx.addAttr('u_AmbientColor', gl.getUniformLocation(program, 'u_AmbientColor'))
+
+        for (let i = 0; i < 4; ++i) {
+            const u_Light = `u_Lights[${i}]`
+
+            this.#ctx.addAttr(`${u_Light}.type`, gl.getUniformLocation(program, `${u_Light}.type`))
+            this.#ctx.addAttr(`${u_Light}.position`, gl.getUniformLocation(program, `${u_Light}.position`))
+            this.#ctx.addAttr(`${u_Light}.direction`, gl.getUniformLocation(program, `${u_Light}.direction`))
+            this.#ctx.addAttr(`${u_Light}.color`, gl.getUniformLocation(program, `${u_Light}.color`))
+        }
+    }
+
+    #compileShader(type, src) {
+        const gl = this.#ctx.gl
+
+        const shader = gl.createShader(type)
+        if (!shader)
+            throw new EngineError('failed to create shader object')
+        
+        gl.shaderSource(shader, src)
+        gl.compileShader(shader)
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const log = gl.getShaderInfoLog(shader)
+            gl.deleteShader(shader)
+            throw new EngineError(`shader compilation failed: ${log}`)
+        }
+
+        return shader
     }
 }

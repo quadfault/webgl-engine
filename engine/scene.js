@@ -5,8 +5,6 @@
 
 import { Builder } from './builder.js'
 import { Context } from './context.js'
-import { GOURAUD_VS } from './gouraud-vs.js'
-import { GOURAUD_FS } from './gouraud-fs.js'
 import { EngineError } from './error.js'
 import { vec4 } from './math.js'
 import { NodeBuilder } from './node.js'
@@ -30,8 +28,6 @@ export class Scene {
         this.#ctx = ctx
         this.#name = name
         this.#nodes = nodes
-
-        this.loadShaders(GOURAUD_VS, GOURAUD_FS)
     }
 
     /* Set or get the ambient light color of this scene. */
@@ -81,62 +77,6 @@ export class Scene {
 
         for (let mesh of meshes)
             mesh.render()
-    }
-
-    /* PRIVATE */
-
-    loadShaders(vsSrc, fsSrc) {
-        const gl = this.#ctx.gl
-
-        const vs = this.compileShader(gl.VERTEX_SHADER, vsSrc)
-        const fs = this.compileShader(gl.FRAGMENT_SHADER, fsSrc)
-
-        const program = gl.createProgram()
-        if (!program)
-            throw new EngineError('failed to create shader program object')
-
-        gl.attachShader(program, vs)
-        gl.attachShader(program, fs)
-        gl.linkProgram(program)
-
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            const log = gl.getProgramInfoLog(program)
-            gl.deleteProgram(program)
-            throw new EngineError(`shader program linking failed: ${log}`)
-        }
-
-        gl.useProgram(program)
-
-        this.#ctx.addAttr('a_Position', gl.getAttribLocation(program, 'a_Position'))
-        this.#ctx.addAttr('a_Normal', gl.getAttribLocation(program, 'a_Normal'))
-        this.#ctx.addAttr('u_ModelTransform', gl.getUniformLocation(program, 'u_ModelTransform'))
-        this.#ctx.addAttr('u_VpTransform', gl.getUniformLocation(program, 'u_VpTransform'))
-        this.#ctx.addAttr('u_NormalTransform', gl.getUniformLocation(program, 'u_NormalTransform'))
-        this.#ctx.addAttr('u_Color', gl.getUniformLocation(program, 'u_Color'))
-        this.#ctx.addAttr('u_AmbientColor', gl.getUniformLocation(program, 'u_AmbientColor'))
-        this.#ctx.addAttr('u_LightType', gl.getUniformLocation(program, 'u_LightType'))
-        this.#ctx.addAttr('u_LightPosition', gl.getUniformLocation(program, 'u_LightPosition'))
-        this.#ctx.addAttr('u_LightDirection', gl.getUniformLocation(program, 'u_LightDirection'))
-        this.#ctx.addAttr('u_LightColor', gl.getUniformLocation(program, 'u_LightColor'))
-    }
-
-    compileShader(type, src) {
-        const gl = this.#ctx.gl
-
-        const shader = gl.createShader(type)
-        if (!shader)
-            throw new EngineError('failed to create shader object')
-        
-        gl.shaderSource(shader, src)
-        gl.compileShader(shader)
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            const log = gl.getShaderInfoLog(shader)
-            gl.deleteShader(shader)
-            throw new EngineError(`shader compilation failed: ${log}`)
-        }
-
-        return shader
     }
 }
 

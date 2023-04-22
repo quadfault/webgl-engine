@@ -59,13 +59,13 @@ export function scenesFromAsset(ctx, asset) {
     /* Convert each glTF light into the appropriate kind of Light. */
     const lights = []
     if (asset.extensionsUsed?.includes('KHR_lights_punctual')) {
-        for (let lightSpec of asset.extensions.KHR_lights_punctual.lights) {
+        for (let [index, lightSpec] of asset.extensions.KHR_lights_punctual.lights.entries()) {
             const color = vec4.make(...lightSpec.color, 1)
 
             if (lightSpec.type === 'directional')
-                lights.push(new DirectionalLight(ctx, lightSpec.name, color))
+                lights.push(new DirectionalLight(ctx, lightSpec.name, index, color))
             else if (lightSpec.type === 'point')
-                lights.push(new PointLight(ctx, lightSpec.name, color))
+                lights.push(new PointLight(ctx, lightSpec.name, index, color))
 
             /* TODO: handle other light types */
         }
