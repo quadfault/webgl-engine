@@ -22,7 +22,7 @@ export class Renderer {
 
     /* Construct a new renderer on the given canvas. */
     constructor(canvas) {
-        const gl = canvas.getContext('webgl')
+        const gl = canvas.getContext('webgl2')
         if (!gl)
             throw new EngineError('could not get WebGL context on canvas element')
 
