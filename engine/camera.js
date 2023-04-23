@@ -3,8 +3,6 @@
  * 3/18/23
  */
 
-import { Builder } from './builder.js'
-
 /* A simple pinhole camera.
  *
  * TODO: Right now, this camera does nothing. The view transform for the camera is given by its parent node.
@@ -41,27 +39,5 @@ export class Camera {
         this.#ctx.vpTransform = this.#projection.times(transform.inverseRigid())
         
         return []
-    }
-}
-
-export class CameraBuilder extends Builder {
-    #ctx
-    #name
-    #projection
-
-    constructor(parent, ctx, name) {
-        super(parent)
-        this.#ctx = ctx
-        this.#name = name
-    }
-
-    projection(mat) {
-        this.#projection = mat
-
-        return this
-    }
-
-    build() {
-        return new Camera(this.#ctx, this.#name, this.#projection)
     }
 }

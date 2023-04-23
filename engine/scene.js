@@ -3,11 +3,9 @@
  * 2/26/23
  */
 
-import { Builder } from './builder.js'
 import { Context } from './context.js'
 import { EngineError } from './error.js'
 import { vec4 } from './math.js'
-import { NodeBuilder } from './node.js'
 
 /* A collection of nodes. */
 export class Scene {
@@ -77,34 +75,5 @@ export class Scene {
 
         for (let mesh of meshes)
             mesh.render()
-    }
-}
-
-export class SceneBuilder extends Builder {
-    #ctx
-    #name
-    #nodes = []
-
-    #nodeBuilder
-
-    constructor(parent, ctx, name) {
-        super(parent)
-        this.#ctx = ctx
-        this.#name = name
-    }
-
-    node(name) {
-        if (this.#nodeBuilder)
-            this.#nodes.push(this.#nodeBuilder.build())
-
-        this.#nodeBuilder = new NodeBuilder(this, this.#ctx, name)
-        return this.#nodeBuilder
-    }
-
-    build() {
-        if (this.#nodeBuilder)
-            this.#nodes.push(this.#nodeBuilder.build())
-
-        return new Scene(this.#ctx, this.#name, this.#nodes)
     }
 }

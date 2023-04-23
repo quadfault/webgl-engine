@@ -3,11 +3,8 @@
  * 3/11/23
  */
 
-import { Builder } from './builder.js'
-import { CameraBuilder } from './camera.js'
 import { EngineError } from './error.js'
 import { mat4 } from './math.js'
-import { TriangleBuilder } from './triangle.js'
 
 /* A node is a collection of meshes and other nodes, all under a single transform. */
 export class Node {
@@ -82,64 +79,5 @@ export class Node {
 
         for (let child of this.#children)
             child.update(delta)
-    }
-}
-
-export class NodeBuilder extends Builder {
-    #ctx
-    #name
-    #transform = mat4.identity()
-    #children = []
-    #ons = []
-
-    #childBuilder
-
-    constructor(parent, ctx, name) {
-        super(parent)
-        this.#ctx = ctx
-        this.#name = name
-    }
-
-    transform(mat) {
-        this.#transform = mat
-
-        return this
-    }
-
-    node(name) {
-        if (this.#childBuilder)
-            this.#children.push(this.#childBuilder.build())
-
-        this.#childBuilder = new NodeBuilder(this, this.#ctx, name)
-        return this.#childBuilder
-    }
-
-    camera(name) {
-        if (this.#childBuilder)
-            this.#children.push(this.#childBuilder.build())
-
-        this.#childBuilder = new CameraBuilder(this, this.#ctx, name)
-        return this.#childBuilder
-    }
-
-    triangle(name) {
-        if (this.#childBuilder)
-            this.#children.push(this.#childBuilder.build())
-
-        this.#childBuilder = new TriangleBuilder(this, this.#ctx, name)
-        return this.#childBuilder
-    }
-
-    on(event, handler) {
-        this.#ons.push({ event, handler })
-
-        return this
-    }
-
-    build() {
-        if (this.#childBuilder)
-            this.#children.push(this.#childBuilder.build())
-
-        return new Node(this.#ctx, this.#name, this.#transform, this.#children, this.#ons)
     }
 }
