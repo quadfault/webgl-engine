@@ -1,4 +1,4 @@
-/* torus.js - Render a torus created in Blender.
+/* rings.js - Rotating, interlocking rings.
  * Written by quadfault
  * 4/13/23
  */
