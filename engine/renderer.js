@@ -17,6 +17,9 @@ export class Renderer {
     /* The canvas we are rendering to. */
     #canvas
 
+    /* A ResizeObserver that responds to changes in the canvas size. */
+    #resizeObserver
+
     /* The scene to render. */
     #scene = null
 
@@ -28,6 +31,10 @@ export class Renderer {
 
         this.#ctx = new Context(gl)
         this.#canvas = canvas
+
+        this.#resizeObserver = new ResizeObserver(this.#adjustViewport)
+        this.#resizeObserver.observe(this.#canvas)
+        this.#adjustViewport()
 
         this.#initGl()
     }
@@ -79,6 +86,15 @@ export class Renderer {
         }
 
         window.requestAnimationFrame(step)
+    }
+
+    #adjustViewport() {
+        /* Match the canvas size to its CSS size. */
+        this.#canvas.width = this.#canvas.clientWidth
+        this.#canvas.height = this.#canvas.clientHeight
+
+        /* Match the WebGL viewport to the new canvas size. */
+        this.#ctx.gl.viewport(0, 0, this.#canvas.width, this.#canvas.height)
     }
 
     /* Initialize all per-renderer GL state, including loading the shaders. */
