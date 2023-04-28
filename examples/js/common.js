@@ -24,8 +24,8 @@ export function addControls(node) {
         })
         .on('mousemove', (node, ev) => {
             if (shouldRotate) {
-                const angleY = ev.movementX / 50
-                const angleX = ev.movementY / 50
+                const angleY = ev.movementX / 20
+                const angleX = ev.movementY / 20
 
                 node.transform(node.transform().times(mat4.rotate_y(-angleY).rotate_x(-angleX)))
             }
