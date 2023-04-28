@@ -3,7 +3,8 @@
  * 4/13/23
  */
 
-import { Renderer, mat4 } from '/engine/engine.js'
+import { Renderer } from '/engine/engine.js'
+import { addControls } from './common.js'
 
 /* BEGIN main */
 
@@ -13,24 +14,8 @@ const renderer = new Renderer(canvas)
 await renderer.loadGltfAssetAsync('/examples/assets/two-lights.gltf')
 renderer.select('Scene')
     .ambientColor(0.1, 0.1, 0.1, 1)
+addControls(renderer.select('camera-node'))
 
-renderer.render()
+renderer.animate()
 
 /* END main */
-
-/* Spin a node by 'angle' degrees per second. */
-function spinBy(angle) {
-    return (node, delta) => {
-        node.transform(mat4.rotate_z(angle / 1000 * delta).times(node.transform()))
-    }
-}
-
-/* Math.sin(), but accepts an angle in degrees. */
-function sina(angle) {
-    return Math.sin(angle * Math.PI / 180)
-}
-
-/* Math.cos(), but accepts an angle in degrees. */
-function cosa(angle) {
-    return Math.cos(angle * Math.PI / 180)
-}

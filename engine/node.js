@@ -51,6 +51,8 @@ export class Node {
             this.#updateHandler = handler
         else
             this.#ctx.canvas.addEventListener(event, (ev) => handler(this, ev))
+
+        return this
     }
 
     /* Get or set the transform of this node. */
