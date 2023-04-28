@@ -4,6 +4,7 @@
  */
 
 import { Renderer, mat4 } from '/engine/engine.js'
+import { addControls } from './common.js'
 
 /* BEGIN main */
 
@@ -15,6 +16,7 @@ renderer.select('Scene')
     .ambientColor(0.1, 0.1, 0.1, 1)
 renderer.select('donut-node')
     .on('update', spinBy(20))
+addControls(renderer.select('Camera'))
 
 renderer.animate()
 

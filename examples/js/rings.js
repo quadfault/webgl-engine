@@ -4,6 +4,7 @@
  */
 
 import { Renderer, mat4 } from '/engine/engine.js'
+import { addControls } from './common.js'
 
 /* BEGIN main */
 
@@ -53,6 +54,8 @@ renderer.select('ring-small-15')
     .on('update', ySpinBy(40))
 renderer.select('ring-small-16')
     .on('update', ySpinBy(40))
+
+addControls(renderer.select('Camera'))
 
 renderer.animate()
 
