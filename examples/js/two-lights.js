@@ -15,6 +15,20 @@ await renderer.loadGltfAssetAsync('/examples/assets/two-lights.gltf')
 renderer.select('Scene')
     .ambientColor(0.1, 0.1, 0.1, 1)
 addControls(renderer.select('camera-node'))
+renderer.select('light1')
+    .on('keydown', (node, ev) => {
+        if (ev.code === 'KeyJ')
+            node.transform(node.transform().translate(0, -0.1, 0))
+        else if (ev.code === 'KeyK')
+            node.transform(node.transform().translate(0, 0.1, 0))
+    })
+renderer.select('light2')
+    .on('keydown', (node, ev) => {
+        if (ev.code === 'KeyL')
+            node.transform(node.transform().translate(0, -0.1, 0))
+        else if (ev.code === 'Semicolon')
+            node.transform(node.transform().translate(0, 0.1, 0))
+    })
 
 renderer.animate()
 
