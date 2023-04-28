@@ -6,8 +6,8 @@
 import { Context } from './context.js'
 import { EngineError } from './error.js'
 import { loadGltfAssetAsync, scenesFromAsset } from './gltf.js'
-import { GOURAUD_VS } from './gouraud-vs.js'
-import { GOURAUD_FS } from './gouraud-fs.js'
+import { PHONG_VS } from './phong-vs.js'
+import { PHONG_FS } from './phong-fs.js'
 
 /* A WebGL renderer attached to a canvas. */
 export class Renderer {
@@ -32,7 +32,7 @@ export class Renderer {
         this.#ctx = new Context(gl)
         this.#canvas = canvas
 
-        this.#resizeObserver = new ResizeObserver(this.#adjustViewport)
+        this.#resizeObserver = new ResizeObserver(this.#adjustViewport.bind(this))
         this.#resizeObserver.observe(this.#canvas)
         this.#adjustViewport()
 
@@ -103,7 +103,7 @@ export class Renderer {
 
         gl.enable(gl.DEPTH_TEST)
 
-        this.#loadShaders(GOURAUD_VS, GOURAUD_FS)
+        this.#loadShaders(PHONG_VS, PHONG_FS)
     }
 
     /* Load the vertex and fragment shaders from the source strings `vsSrc` and `fsSrc`, respectively. */
@@ -158,9 +158,10 @@ export class Renderer {
         gl.compileShader(shader)
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const typeString = (type === gl.VERTEX_SHADER ? 'vertex' : 'fragment')
             const log = gl.getShaderInfoLog(shader)
             gl.deleteShader(shader)
-            throw new EngineError(`shader compilation failed: ${log}`)
+            throw new EngineError(`${typeString} shader compilation failed: ${log}`)
         }
 
         return shader

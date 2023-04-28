@@ -3,33 +3,47 @@
  * 4/17/23
  */
 
-export const PHONG_VS = `
+export const PHONG_FS = `
 precision highp float;
 
-varying vec4 v_Color;
+uniform struct Light {
+    int  type;                      /* The type of light: 0 for no light, 1 for directional, 2 for point. */
+    vec4 position;                  /* The position of the light in world space. */
+    vec4 direction;                 /* The direction of the light, pointing AWAY from the surface. */
+    vec4 color;                     /* The intensity of the light in each color channel. */
+} u_Lights[4];
 
-/* The intensity of the ambient light in the scene. This is a per-scene uniform. */
-uniform float u_AmbientIntensity;
-/* The intensity of the one light source in the scene. We assume there is only one light source, and that light
- * source is a point light.
- */
-uniform float u_LightIntensity;
+uniform vec4 u_Color;               /* Color of this primitive. */
+uniform vec4 u_AmbientColor;        /* Ambient light color, per scene. */
+
+varying vec4 v_Position;            /* Fragment position, in world space. */
+varying vec4 v_Normal;              /* Fragment normal, in world space. */
 
 void main() {
-    /* FIXME: For now, assume the material reflects all light components. */
-    float ka = 1.0;
-    float kd = 1.0;
-    float ks = 1.0;
+    /* Ambient reflection. */
+    vec3 ambient = u_AmbientColor.rgb * u_Color.rgb;
 
-    /* FIXME: For now, assume the material's shininess. */
-    float ns = 20.0;
+    /* A simple diffuse reflection, calculated per light. */
+    vec3 diffuse = vec3(0.0);
+    for (int i = 0; i < 4; ++i) {
+        vec4 L;
+        if (u_Lights[i].type == 0) {
+            continue;
+        } else if (u_Lights[i].type == 1) {
+            /* Directional light. */
+            L = u_Lights[i].direction;
+        } else if (u_Lights[i].type == 2) {
+            /* Point light. */
+            L = normalize(u_Lights[i].position - v_Position);
+        } else {
+            /* Bad light type. */
+            L = vec4(0.0);
+        }
 
-    float Ia = ka * u_AmbientIntensity;
-    float Id = kd * n_dot_l * Il;
-    float Is = ks * pow(r_dot_v, ns) * Il;
+        float N_dot_L = max(dot(v_Normal, L), 0.0);
+        diffuse += u_Lights[i].color.rgb * u_Color.rgb * N_dot_L;
+    }
 
-    float I = Ia + Id + Is;
-
-    gl_FragColor = I * v_Color;
+    gl_FragColor = vec4(ambient + diffuse, u_Color.a);
 }
 `

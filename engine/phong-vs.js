@@ -1,24 +1,24 @@
 /* phong-vs.js - Phong shading vertex shader.
  * Written by quadfault
- * 4/17/23
+ * 4/20/23
  */
 
 export const PHONG_VS = `
-attribute vec4 a_Position;
-attribute vec4 a_Normal;
+attribute vec4 a_Position;          /* Vertex position, in model space. */
+attribute vec4 a_Normal;            /* Vertex normal, in model space. */
 
-uniform mat4 u_mvTransform;
-uniform mat4 u_mvpTransform;
+uniform mat4 u_ModelTransform;      /* Transforms position into world space. */
+uniform mat4 u_VpTransform;         /* Transforms position in world space into clip space. */
+uniform mat4 u_NormalTransform;     /* Transforms normal into world space. */
 
-uniform vec4 u_LightPosition;
-uniform vec
-
+varying vec4 v_Position;
 varying vec4 v_Normal;
-varying vec4 v_LightPosition;
 
 void main() {
-    gl_Position = u_mvpTransform * a_Position;
-    v_Normal = u_mvTransform * a_Normal;
-    v_LightPosition = u_mvTransform * u_LightPosition;
+    vec4 worldPosition = u_ModelTransform * a_Position;
+
+    gl_Position = u_VpTransform * worldPosition;
+    v_Position = worldPosition;
+    v_Normal = normalize(u_NormalTransform * a_Normal);
 }
 `
