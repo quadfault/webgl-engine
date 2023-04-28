@@ -25,6 +25,7 @@ void main() {
 
     /* A simple diffuse reflection, calculated per light. */
     vec3 diffuse = vec3(0.0);
+    float rsqr = 1.0;
     for (int i = 0; i < 4; ++i) {
         vec4 L;
         if (u_Lights[i].type == 0) {
@@ -34,14 +35,18 @@ void main() {
             L = u_Lights[i].direction;
         } else if (u_Lights[i].type == 2) {
             /* Point light. */
-            L = normalize(u_Lights[i].position - v_Position);
+            vec4 lightDirection = u_Lights[i].position - v_Position;
+            L = normalize(lightDirection);
+
+            float distance = length(lightDirection);
+            rsqr = distance * distance;
         } else {
             /* Bad light type. */
             L = vec4(0.0);
         }
 
         float N_dot_L = max(dot(v_Normal, L), 0.0);
-        diffuse += u_Lights[i].color.rgb * u_Color.rgb * N_dot_L;
+        diffuse += u_Lights[i].color.rgb * u_Color.rgb * (N_dot_L / rsqr);
     }
 
     gl_FragColor = vec4(ambient + diffuse, u_Color.a);
